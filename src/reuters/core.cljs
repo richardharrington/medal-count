@@ -112,8 +112,20 @@
 
 (def with-totals (add-totals downloaded-json))
 
-(def dummy-data with-totals)
+;; (def dummy-data with-totals)
 
+(defn sort-by-with-fallback [primary-key fallback-key]
+  (partial sort (comparator (fn [a b]
+                              (if (not= (primary-key a) (primary-key b))
+                                (> (primary-key a) (primary-key b))
+                                (> (fallback-key a) (fallback-key b)))))))
+
+(def sort-by-gold (sort-by-with-fallback :gold :silver))
+(def sort-by-silver (sort-by-with-fallback :silver :gold))
+(def sort-by-bronze (sort-by-with-fallback :bronze :gold))
+(def sort-by-total (sort-by-with-fallback :total :gold))
+
+(def dummy-data (sort-by-bronze with-totals))
 
 (defn make-flag-pos-map [award-data flag-height]
   (let [codes (->> award-data (map :code) sort)
@@ -164,7 +176,6 @@
                        rows)]]))))
 
 ;; render
-
 
 
 (defn render []
