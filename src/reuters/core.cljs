@@ -25,6 +25,7 @@
                      (render (js->clj (.-props el) :keywordize-keys true))))}))
 
 
+(def country-codes)
 
 
 (def dummy-data
@@ -108,6 +109,18 @@
     }
    ])
 
+
+(defn make-flag-pos-map [award-data flag-height]
+  (let [codes (->> award-data (map :code) sort)
+        positions (map (partial * -1 flag-height) (range (count codes)))]
+    (prn codes)
+    (zipmap codes positions)))
+
+(def flag-pos-map
+  (make-flag-pos-map dummy-data 17))
+
+(prn flag-pos-map)
+
 (def Row
   (component
     "Row"
@@ -115,7 +128,10 @@
       (sab/html
         [:tr.row
          [:td.order (str (inc idx))]
-         [:td.flag "flag"]
+         [:td.flag
+          [:div {:style {"background-position"
+                         (str "0 " (get flag-pos-map code) "px")}}]
+          ""]
          [:td.code code]
          [:td.gold gold]
          [:td.silver silver]
