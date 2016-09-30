@@ -1,2 +1,19 @@
 /* some style */
 
+.row * {
+  padding: 5px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.main-table, .main-table th, .main-table td {
+  border: 1px solid red;
+  padding: 5px;
+}
+
+.main-table thead tr {
+  cursor: pointer;
+}
