@@ -6,12 +6,10 @@
 
 (enable-console-print!)
 
-(println "This text is printed from src/reuters/core.cljs. Go ahead and edit it and see reloading in action.")
-
 ;; define your app data so that it doesn't get over-written on reload
 
-(defonce app-state (atom {:text "Hello world!"}))
-
+(defonce app-state (atom {:sort-criterion "gold"
+                          :element-id "app"}))
 
 
 (defn element [type props & children]
@@ -25,10 +23,9 @@
                      (render (js->clj (.-props el) :keywordize-keys true))))}))
 
 
-(def country-codes)
 
 
-(def dummy-data
+(def downloaded-json
   [{
     :code "USA",
     :gold 9,
@@ -109,6 +106,14 @@
     }
    ])
 
+(def add-totals
+  (partial map (fn [{:keys [gold silver bronze] :as country-awards}]
+                 (assoc country-awards :total (+ gold silver bronze)))))
+
+(def with-totals (add-totals downloaded-json))
+
+(def dummy-data with-totals)
+
 
 (defn make-flag-pos-map [award-data flag-height]
   (let [codes (->> award-data (map :code) sort)
@@ -124,7 +129,7 @@
 (def Row
   (component
     "Row"
-    (fn [{:keys [idx code gold silver bronze]}]
+    (fn [{:keys [idx code gold silver bronze total]}]
       (sab/html
         [:tr.row
          [:td.order (str (inc idx))]
@@ -136,7 +141,7 @@
          [:td.gold gold]
          [:td.silver silver]
          [:td.bronze bronze]
-         [:td.total (str (+ gold silver bronze))]]))))
+         [:td.total total]]))))
 
 (def MainTable
   (component
@@ -149,10 +154,10 @@
            [:th ""]
            [:th ""]
            [:th ""]
-           [:th "gold"]
-           [:th "silver"]
-           [:th "bronze"]
-           [:th "total"]]]
+           [:th.gold "gold"]
+           [:th.silver "silver"]
+           [:th.bronze "bronze"]
+           [:th.total "total"]]]
          [:tbody
           (map-indexed (fn [idx row]
                          (element Row (merge row {:idx idx :key idx})))
