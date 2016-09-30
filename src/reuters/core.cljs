@@ -120,12 +120,14 @@
                                 (> (primary-key a) (primary-key b))
                                 (> (fallback-key a) (fallback-key b)))))))
 
-(def sort-by-gold (sort-by-with-fallback :gold :silver))
-(def sort-by-silver (sort-by-with-fallback :silver :gold))
-(def sort-by-bronze (sort-by-with-fallback :bronze :gold))
-(def sort-by-total (sort-by-with-fallback :total :gold))
+(def sort-by-medal-map
+  {"gold" (sort-by-with-fallback :gold :silver)
+   "silver" (sort-by-with-fallback :silver :gold)
+   "bronze" (sort-by-with-fallback :bronze :gold)
+   "total" (sort-by-with-fallback :total :gold)})
 
-(def dummy-data (sort-by-bronze with-totals))
+
+(def dummy-data with-totals)
 
 (defn make-flag-pos-map [award-data flag-height]
   (let [codes (->> award-data (map :code) sort)
@@ -158,7 +160,7 @@
 (def MainTable
   (component
     "MainTable"
-    (fn [{:keys [rows]}]
+    (fn [{:keys [rows sort-criterion]}]
       (sab/html
         [:table.main-table
          [:thead
@@ -179,8 +181,14 @@
 
 
 (defn render []
-  (let [node (.getElementById js/document "app")]
-    (js/ReactDOM.render (element MainTable {:rows (take 10 dummy-data)}) node)))
+  (let [{:keys [element-id sort-criterion]} @app-state
+        node (.getElementById js/document element-id)
+        sort-by-medal (sort-by-medal-map sort-criterion)]
+    (js/ReactDOM.render (element MainTable {:rows (->> dummy-data
+                                                       (sort-by-medal)
+                                                       (take 10))
+                                            :sort-criterion sort-criterion})
+                        node)))
 
 (render)
 
