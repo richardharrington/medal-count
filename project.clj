@@ -10,6 +10,7 @@
                  [org.clojure/clojurescript "1.9.89"]
                  [cljsjs/react "15.2.1-1"]
                  [cljsjs/react-dom "15.2.1-1"]
+                 [cljs-ajax "0.5.8"]
                  [sablono "0.7.3"]
                  [org.clojure/core.async "0.2.385"
                   :exclusions [org.clojure/tools.reader]]]
