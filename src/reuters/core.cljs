@@ -27,9 +27,13 @@
                      (render (js->clj (.-props el) :keywordize-keys true))))}))
 
 
-(def add-totals
+(def add-total
   (partial map (fn [{:keys [gold silver bronze] :as country-awards}]
                  (assoc country-awards :total (+ gold silver bronze)))))
+
+(def add-alpha-index
+  (partial map-indexed (fn [idx country-awards]
+                         (assoc country-awards :alpha-index idx))))
 
 
 (defn sort-by-with-fallback [primary-key fallback-key items]
@@ -48,24 +52,13 @@
     "total" (sort-by-with-fallback :total :gold award-data)))
 
 
-(def make-code->css-flag-pos
-  (memoize
-    (fn [award-data flag-height]
-      (let [codes (->> award-data (map :code) sort)
-            positions (map (partial * -1 flag-height) (range (count codes)))
-            code->pos-map (zipmap codes positions)]
-        ;; cannot just return the map itself because the codes will
-        ;; end up being keywordized by the 'component' function
-        (partial get code->pos-map)))))
-
-
 (def Row
   (component
     "Row"
-    (fn [{:keys [order code css-flag-pos gold silver bronze total]}]
+    (fn [{:keys [display-order code css-flag-pos gold silver bronze total]}]
       (sab/html
         [:tr.row
-         [:td.order order]
+         [:td.display-order display-order]
          [:td.flag
           [:div {:style {"background-position" (str "0 " css-flag-pos "px")}}]]
          [:td.code code]
@@ -78,7 +71,7 @@
 (def MainTable
   (component
     "MainTable"
-    (fn [{:keys [rows sort-criterion code->css-flag-pos]}]
+    (fn [{:keys [rows sort-criterion]}]
       (sab/html
         [:table.main-table
          [:thead
@@ -91,10 +84,10 @@
            [:th.bronze "bronze"]
            [:th.total "total"]]]
          [:tbody
-          (map-indexed (fn [idx {:keys [code] :as row}]
+          (map-indexed (fn [idx {:keys [alpha-index] :as row}]
                          (element Row (merge row {:key idx
-                                                  :order (inc idx)
-                                                  :css-flag-pos (code->css-flag-pos code)})))
+                                                  :display-order (inc idx)
+                                                  :css-flag-pos (* alpha-index -17)})))
                        rows)]]))))
 
 ;; render
@@ -106,15 +99,16 @@
       (element MainTable {:rows (->> award-data
                                      (sort-by-criterion sort-criterion)
                                      (take 10))
-                          :sort-criterion sort-criterion
-                          :code->css-flag-pos (make-code->css-flag-pos
-                                                award-data
-                                                flag-height)})
+                          :sort-criterion sort-criterion})
       container-node)))
 
 
 (defn handler [response]
-  (swap! app-state assoc :award-data (add-totals response)))
+  (->> response
+       (sort-by :code)
+       (add-alpha-index)
+       (add-total)
+       (swap! app-state assoc :award-data)))
 
 
 (defn error-handler [{:keys [status status-text] :as error-response}]
