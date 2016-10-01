@@ -97,7 +97,7 @@
               (element HeaderCell
                        {:header-text header-text
                         :selected? (= header-text sort-criterion)
-                        :update! (partial update-sort-criterion! header-text)}))]
+                        :update! #(update-sort-criterion! header-text)}))]
         (sab/html
           [:table.main-table
            [:thead
