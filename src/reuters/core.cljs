@@ -8,8 +8,9 @@
 
 ;; define your app data so that it doesn't get over-written on reload
 
+(def flag-height 17)
+
 (defonce app-state (atom {:award-data nil ;; will be downloaded
-                          :flag-pos-map nil ;; will be calculated
                           :sort-criterion "gold"
                           :element-id "app"}))
 
@@ -31,40 +32,42 @@
                  (assoc country-awards :total (+ gold silver bronze)))))
 
 
-(defn sort-by-with-fallback [primary-key fallback-key]
-  (partial sort (comparator (fn [a b]
-                              (if (not= (primary-key a) (primary-key b))
-                                (> (primary-key a) (primary-key b))
-                                (> (fallback-key a) (fallback-key b)))))))
+(defn sort-by-with-fallback [primary-key fallback-key items]
+  (sort (comparator (fn [a b]
+                      (if (not= (primary-key a) (primary-key b))
+                        (> (primary-key a) (primary-key b))
+                        (> (fallback-key a) (fallback-key b)))))
+        items))
 
 
-(def sort-by-medal-map
-  {"gold" (sort-by-with-fallback :gold :silver)
-   "silver" (sort-by-with-fallback :silver :gold)
-   "bronze" (sort-by-with-fallback :bronze :gold)
-   "total" (sort-by-with-fallback :total :gold)})
+(defn sort-by-criterion [criterion award-data]
+  (case criterion
+    "gold" (sort-by-with-fallback :gold :silver award-data)
+    "silver" (sort-by-with-fallback :silver :gold award-data)
+    "bronze" (sort-by-with-fallback :bronze :gold award-data)
+    "total" (sort-by-with-fallback :total :gold award-data)))
 
 
-(defn make-flag-pos-map [award-data flag-height]
-  (let [codes (->> award-data (map :code) sort)
-        positions (map (partial * -1 flag-height) (range (count codes)))]
-    (prn codes)
-    (zipmap codes positions)))
+(def make-code->css-flag-pos
+  (memoize
+    (fn [award-data flag-height]
+      (let [codes (->> award-data (map :code) sort)
+            positions (map (partial * -1 flag-height) (range (count codes)))
+            code->pos-map (zipmap codes positions)]
+        ;; cannot just return the map itself because the codes will
+        ;; end up being keywordized by the 'component' function
+        (partial get code->pos-map)))))
 
-
-;; TODO: don't access app-state directly here for :flag-pos-map
 
 (def Row
   (component
     "Row"
-    (fn [{:keys [idx code gold silver bronze total]}]
+    (fn [{:keys [order code css-flag-pos gold silver bronze total]}]
       (sab/html
         [:tr.row
-         [:td.order (str (inc idx))]
+         [:td.order order]
          [:td.flag
-          [:div {:style {"background-position"
-                         (str "0 " (get (:flag-pos-map @app-state) code) "px")}}]
-          ""]
+          [:div {:style {"background-position" (str "0 " css-flag-pos "px")}}]]
          [:td.code code]
          [:td.gold gold]
          [:td.silver silver]
@@ -75,41 +78,43 @@
 (def MainTable
   (component
     "MainTable"
-    (fn [{:keys [rows sort-criterion]}]
+    (fn [{:keys [rows sort-criterion code->css-flag-pos]}]
       (sab/html
         [:table.main-table
          [:thead
           [:tr
-           [:th ""]
-           [:th ""]
-           [:th ""]
+           [:th]
+           [:th]
+           [:th]
            [:th.gold "gold"]
            [:th.silver "silver"]
            [:th.bronze "bronze"]
            [:th.total "total"]]]
          [:tbody
-          (map-indexed (fn [idx row]
-                         (element Row (merge row {:idx idx :key idx})))
+          (map-indexed (fn [idx {:keys [code] :as row}]
+                         (element Row (merge row {:key idx
+                                                  :order (inc idx)
+                                                  :css-flag-pos (code->css-flag-pos code)})))
                        rows)]]))))
 
 ;; render
 
-
 (defn render []
   (let [{:keys [award-data element-id sort-criterion]} @app-state
-        node (.getElementById js/document element-id)
-        sort-by-medal (sort-by-medal-map sort-criterion)]
-    (js/ReactDOM.render (element MainTable {:rows (->> award-data
-                                                       (sort-by-medal)
-                                                       (take 10))
-                                            :sort-criterion sort-criterion})
-                        node)))
+        container-node (.getElementById js/document element-id)]
+    (js/ReactDOM.render
+      (element MainTable {:rows (->> award-data
+                                     (sort-by-criterion sort-criterion)
+                                     (take 10))
+                          :sort-criterion sort-criterion
+                          :code->css-flag-pos (make-code->css-flag-pos
+                                                award-data
+                                                flag-height)})
+      container-node)))
 
 
 (defn handler [response]
-  (let [award-data (add-totals response)]
-    (swap! app-state merge {:award-data award-data
-                            :flag-pos-map (make-flag-pos-map award-data 17)})))
+  (swap! app-state assoc :award-data (add-totals response)))
 
 
 (defn error-handler [{:keys [status status-text] :as error-response}]
