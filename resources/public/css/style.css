@@ -10,13 +10,16 @@ table {
 }
 
 .main-table, .main-table th, .main-table td {
-  border: 1px solid red;
   padding: 5px;
   text-align: center;
 }
 
 .main-table thead tr {
   cursor: pointer;
+}
+
+.main-table th.selected {
+  border-top: 2px solid #888;
 }
 
 .flag div {

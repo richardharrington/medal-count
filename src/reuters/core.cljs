@@ -67,6 +67,16 @@
          [:td.bronze bronze]
          [:td.total total]]))))
 
+(def HeaderCell
+  (component
+    "HeaderCell"
+    (fn [{:keys [header-text sort-criterion]}]
+      (let [class-name (if (= header-text sort-criterion)
+                         "selected"
+                         "")]
+        (sab/html
+          [:th {:class-name class-name} header-text])))))
+
 
 (def MainTable
   (component
@@ -79,15 +89,17 @@
            [:th]
            [:th]
            [:th]
-           [:th.gold "gold"]
-           [:th.silver "silver"]
-           [:th.bronze "bronze"]
-           [:th.total "total"]]]
+           (element HeaderCell {:header-text "gold" :sort-criterion sort-criterion})
+           (element HeaderCell {:header-text "silver" :sort-criterion sort-criterion})
+           (element HeaderCell {:header-text "bronze" :sort-criterion sort-criterion})
+           (element HeaderCell {:header-text "total" :sort-criterion sort-criterion})]]
          [:tbody
           (map-indexed (fn [idx {:keys [alpha-index] :as row}]
-                         (element Row (merge row {:key idx
-                                                  :display-order (inc idx)
-                                                  :css-flag-pos (* alpha-index -17)})))
+                         (element Row (merge
+                                        row
+                                        {:key idx
+                                         :display-order (inc idx)
+                                         :css-flag-pos (* alpha-index flag-height -1)})))
                        rows)]]))))
 
 ;; render
