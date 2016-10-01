@@ -6,15 +6,6 @@
 
 (enable-console-print!)
 
-;; define your app data so that it doesn't get over-written on reload
-
-(def flag-height 17)
-
-(defonce app-state (atom {:award-data nil ;; will be downloaded
-                          :sort-criterion "gold"
-                          :element-id "app"}))
-
-
 (defn element [type props & children]
   (js/React.createElement type (clj->js props) children))
 
@@ -27,14 +18,34 @@
                      (render (js->clj (.-props el) :keywordize-keys true))))}))
 
 
-(def add-total
-  (partial map (fn [{:keys [gold silver bronze] :as country-awards}]
-                 (assoc country-awards :total (+ gold silver bronze)))))
 
-(def add-alpha-index
+;; define your app data so that it doesn't get over-written on reload
+
+(def flag-height 17)
+
+(defonce app-state (atom {:award-data nil ;; will be downloaded
+                          :sort-criterion "gold"
+                          :element-id "app"}))
+
+(def update-award-data!
+  (partial swap! app-state assoc :award-data))
+
+(def update-sort-criterion!
+  (partial swap! app-state assoc :sort-criterion))
+
+(def add-alpha-indexes
   (partial map-indexed (fn [idx country-awards]
                          (assoc country-awards :alpha-index idx))))
 
+(def add-totals
+  (partial map (fn [{:keys [gold silver bronze] :as country-awards}]
+                 (assoc country-awards :total (+ gold silver bronze)))))
+
+(defn augment-award-data [raw-award-data]
+  (->> raw-award-data
+       (sort-by :code)
+       (add-alpha-indexes)
+       (add-totals)))
 
 (defn sort-by-with-fallback [primary-key fallback-key items]
   (sort (comparator (fn [a b]
@@ -70,37 +81,42 @@
 (def HeaderCell
   (component
     "HeaderCell"
-    (fn [{:keys [header-text sort-criterion]}]
-      (let [class-name (if (= header-text sort-criterion)
-                         "selected"
-                         "")]
+    (fn [{:keys [header-text selected? update!]}]
+      (let [class-name (if selected? "selected" "")]
         (sab/html
-          [:th {:class-name class-name} header-text])))))
+          [:th {:class-name class-name :on-click update!}
+           header-text])))))
 
 
 (def MainTable
   (component
     "MainTable"
-    (fn [{:keys [rows sort-criterion]}]
-      (sab/html
-        [:table.main-table
-         [:thead
-          [:tr
-           [:th]
-           [:th]
-           [:th]
-           (element HeaderCell {:header-text "gold" :sort-criterion sort-criterion})
-           (element HeaderCell {:header-text "silver" :sort-criterion sort-criterion})
-           (element HeaderCell {:header-text "bronze" :sort-criterion sort-criterion})
-           (element HeaderCell {:header-text "total" :sort-criterion sort-criterion})]]
-         [:tbody
-          (map-indexed (fn [idx {:keys [alpha-index] :as row}]
-                         (element Row (merge
-                                        row
-                                        {:key idx
-                                         :display-order (inc idx)
-                                         :css-flag-pos (* alpha-index flag-height -1)})))
-                       rows)]]))))
+    (fn [{:keys [rows sort-criterion update-sort-criterion!]}]
+      (let [header-cell
+            (fn [header-text]
+              (element HeaderCell
+                       {:header-text header-text
+                        :selected? (= header-text sort-criterion)
+                        :update! (partial update-sort-criterion! header-text)}))]
+        (sab/html
+          [:table.main-table
+           [:thead
+            [:tr
+             [:th]
+             [:th]
+             [:th]
+             (header-cell "gold")
+             (header-cell "silver")
+             (header-cell "bronze")
+             (header-cell "total")]]
+           [:tbody
+            (map-indexed (fn [idx {:keys [alpha-index] :as row}]
+                           (element Row (merge
+                                          row
+                                          {:key idx
+                                           :display-order (inc idx)
+                                           :css-flag-pos (* alpha-index flag-height -1)})))
+                         rows)]])))))
 
 ;; render
 
@@ -111,16 +127,13 @@
       (element MainTable {:rows (->> award-data
                                      (sort-by-criterion sort-criterion)
                                      (take 10))
-                          :sort-criterion sort-criterion})
+                          :sort-criterion sort-criterion
+                          :update-sort-criterion! update-sort-criterion!})
       container-node)))
 
 
 (defn handler [response]
-  (->> response
-       (sort-by :code)
-       (add-alpha-index)
-       (add-total)
-       (swap! app-state assoc :award-data)))
+  (update-award-data! (augment-award-data response)))
 
 
 (defn error-handler [{:keys [status status-text] :as error-response}]
