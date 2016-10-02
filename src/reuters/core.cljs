@@ -18,14 +18,13 @@
                      (render (js->clj (.-props el) :keywordize-keys true))))}))
 
 
-
 ;; define your app data so that it doesn't get over-written on reload
 
 (def flag-height 17)
+(def award-data-endpoint "https://s3-us-west-2.amazonaws.com/reuters.medals-widget/medals.json")
 
 (defonce app-state (atom {:award-data nil ;; will be downloaded
-                          :sort-criterion "gold"
-                          :element-id "app"}))
+                          :sort-criterion nil})) ;; will be passed in as an argument
 
 (def update-award-data!
   (partial swap! app-state assoc :award-data))
@@ -120,8 +119,8 @@
 
 ;; render
 
-(defn render []
-  (let [{:keys [award-data element-id sort-criterion]} @app-state
+(defn render [element-id]
+  (let [{:keys [award-data sort-criterion]} @app-state
         container-node (.getElementById js/document element-id)]
     (js/ReactDOM.render
       (element MainTable {:rows (->> award-data
@@ -139,11 +138,25 @@
 (defn error-handler [{:keys [status status-text] :as error-response}]
   (js/alert (str "Something bad happened: " status " " status-text)))
 
+(defn place-widget!
+  ([element-id]
+   (place-widget! element-id "gold"))
+  ([element-id sort-criterion]
+   (update-sort-criterion! sort-criterion)
+   (ajax/GET award-data-endpoint
+             {:handler handler
+              :error-handler error-handler
+              :response-format (ajax/json-response-format {:keywords? true})})
+   (add-watch app-state :rerender (fn [_ _ _ _] (render element-id)))))
 
-(ajax/GET "https://s3-us-west-2.amazonaws.com/reuters.medals-widget/medals.json"
-          {:handler handler
-           :error-handler error-handler
-           :response-format (ajax/json-response-format {:keywords? true})})
+(place-widget! "app" "silver")
 
 
-(add-watch app-state :rerender (fn [_ _ _ _] (render)))
+;; TODO:
+;; 1. Change award to medal, in naming,
+;; 2. Make everything private except place-widget!,
+;; 3. Make it look like the screenshot.
+;; 4. Write comments
+;; 5. Write a readme
+;; 6. Write tests. spec? Some integration tests?
+;; 7. Compile and deploy to github
