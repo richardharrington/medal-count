@@ -95,7 +95,7 @@ html, html * {
   top: 3px;
   width: 44px;
   height: 26px;
-  background-image: url(/images/flags.png);
+  background-image: url(images/flags.png);
   background-size: 100%;
 }
 
