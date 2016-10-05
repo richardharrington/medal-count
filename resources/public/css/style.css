@@ -93,7 +93,7 @@ html, html * {
   display: inline-block;
   width: 44px;
   height: 26px;
-  background-image: url(https://s3-us-west-2.amazonaws.com/reuters.medals-widget/flags.png);
+  background-image: url(/images/flags.png);
   background-size: 100%;
 }
 
