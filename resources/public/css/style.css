@@ -24,7 +24,7 @@ html, html * {
 }
 
 .main-table, .main-table th, .main-table td {
-  padding: 10px 0;
+  padding: 8px 0;
   text-align: center;
 }
 
@@ -79,9 +79,9 @@ html, html * {
 }
 
 .main-table td.display-order {
-  width: 45px;
+  width: 42px;
   text-align: right;
-  padding-right: 15px;
+  padding-right: 12px;
 }
 
 .main-table td.flag {
@@ -91,6 +91,8 @@ html, html * {
 
 .flag div {
   display: inline-block;
+  position: relative;
+  top: 3px;
   width: 44px;
   height: 26px;
   background-image: url(/images/flags.png);
