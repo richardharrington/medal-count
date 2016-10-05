@@ -75,7 +75,7 @@
         [:tr
          [:td.display-order display-order]
          [:td.flag
-          [:div {:style {"background-position" (str "0 " css-flag-pos "px")}}]]
+          [:div {:style {"background-position" (str "0 " css-flag-pos "%")}}]]
          [:td.code code]
          [:td.gold gold]
          [:td.silver silver]
@@ -117,7 +117,7 @@
                                             row
                                             {:key idx
                                              :display-order (inc idx)
-                                             :css-flag-pos (* alpha-index flag-height -1)})))
+                                             :css-flag-pos (/ (* 100 alpha-index) 12)})))
                          rows)]])))))
 
 (def ^:private AppContainer
@@ -169,7 +169,4 @@
 
 
 ;; TODO:
-;; 3. fix the sizes of the flags
-;; 5. Write a readme
-;; 6. Write tests. spec? Some integration tests?
 ;; 7. Compile and deploy to github

@@ -91,11 +91,10 @@ html, html * {
 
 .flag div {
   display: inline-block;
-  width: 28px;
-  height: 17px;
+  width: 44px;
+  height: 26px;
   background-image: url(https://s3-us-west-2.amazonaws.com/reuters.medals-widget/flags.png);
-  background-position: 0 0;
-  background-repeat: no-repeat;
+  background-size: 100%;
 }
 
 .main-table td.code {
