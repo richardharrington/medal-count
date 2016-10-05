@@ -1,0 +1,114 @@
+/* some style */
+
+html, html * {
+  box-sizing: border-box;
+  font-family: Helvetica, Arial, "sans serif";
+  color: #888;
+  font-size: 1.2rem;
+}
+
+.app-container {
+  width: 515px;
+  margin-top: 20px;
+  margin-left: 20px;
+}
+
+.label {
+  font-size: 1.45rem;
+  margin-bottom: 5px;
+}
+
+.main-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.main-table, .main-table th, .main-table td {
+  padding: 8px 0;
+  text-align: center;
+}
+
+.main-table thead tr {
+  cursor: pointer;
+  border-bottom: 3px solid #888;
+}
+
+.main-table tbody tr {
+  border-bottom: 1px solid #888;
+}
+
+.main-table th {
+  position: relative;
+  height: 45px;
+}
+
+.main-table th.gold::after, .main-table th.silver::after, .main-table th.bronze::after  {
+  content: "";
+  position: absolute;
+  bottom: 9px;
+  left: calc(50% - 13px);
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+}
+
+.main-table th.gold::after {
+  background-color: #FACF45;
+}
+
+.main-table th.silver::after {
+  background-color: #9BA6AD;
+}
+
+.main-table th.bronze::after {
+  background-color: #865129;
+}
+
+.main-table th.total::after {
+  content: "TOTAL";
+  position: absolute;
+  bottom: 11px;
+  left: calc(50% - 27px);
+  font-size: 0.95rem;
+  font-weight: normal;
+  color: #000;
+}
+
+.main-table th.selected {
+  border-top: 3px solid #888;
+}
+
+.main-table td.display-order {
+  width: 42px;
+  text-align: right;
+  padding-right: 12px;
+}
+
+.main-table td.flag {
+  width: 67px;
+  text-align: left;
+}
+
+.flag div {
+  display: inline-block;
+  position: relative;
+  top: 3px;
+  width: 44px;
+  height: 26px;
+  background-image: url(/images/flags.png);
+  background-size: 100%;
+}
+
+.main-table td.code {
+  width: 155px;
+  font-weight: bold;
+  text-align: left;
+}
+
+.main-table td.gold, .main-table td.silver, .main-table td.bronze, .main-table td.total {
+  width: 72px;
+}
+
+.main-table td.total {
+  color: #000;
+}
