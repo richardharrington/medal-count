@@ -12,16 +12,16 @@
 ;; Config values
 
 (def ^:private flag-height 17)
-(def ^:private award-data-endpoint "https://s3-us-west-2.amazonaws.com/reuters.medals-widget/medals.json")
+(def ^:private medal-data-endpoint "https://s3-us-west-2.amazonaws.com/reuters.medals-widget/medals.json")
 
 
 ;; Global app-state atom, and updaters for it
 
-(defonce ^:private app-state (atom {:award-data nil ;; will be downloaded
+(defonce ^:private app-state (atom {:medal-data nil ;; will be downloaded
                                     :sort-criterion nil})) ;; will be passed in as an argument
 
-(def ^:private update-award-data!
-  (partial swap! app-state assoc :award-data))
+(def ^:private update-medal-data!
+  (partial swap! app-state assoc :medal-data))
 
 (def ^:private update-sort-criterion!
   (partial swap! app-state assoc :sort-criterion))
@@ -33,15 +33,15 @@
 ;; in each row.)
 
 (def ^:private add-alpha-indexes
-  (partial map-indexed (fn [idx country-awards]
-                         (assoc country-awards :alpha-index idx))))
+  (partial map-indexed (fn [idx country-medals]
+                         (assoc country-medals :alpha-index idx))))
 
 (def ^:private add-totals
-  (partial map (fn [{:keys [gold silver bronze] :as country-awards}]
-                 (assoc country-awards :total (+ gold silver bronze)))))
+  (partial map (fn [{:keys [gold silver bronze] :as country-medals}]
+                 (assoc country-medals :total (+ gold silver bronze)))))
 
-(defn- augment-award-data [raw-award-data]
-  (->> raw-award-data
+(defn- augment-medal-data [raw-medal-data]
+  (->> raw-medal-data
        (sort-by :code)
        (add-alpha-indexes)
        (add-totals)))
@@ -57,12 +57,12 @@
                         (> (fallback-key a) (fallback-key b)))))
         items))
 
-(defn- sort-by-criterion [criterion award-data]
+(defn- sort-by-criterion [criterion medal-data]
   (case criterion
-    "gold" (sort-by-with-fallback :gold :silver award-data)
-    "silver" (sort-by-with-fallback :silver :gold award-data)
-    "bronze" (sort-by-with-fallback :bronze :gold award-data)
-    "total" (sort-by-with-fallback :total :gold award-data)))
+    "gold" (sort-by-with-fallback :gold :silver medal-data)
+    "silver" (sort-by-with-fallback :silver :gold medal-data)
+    "bronze" (sort-by-with-fallback :bronze :gold medal-data)
+    "total" (sort-by-with-fallback :total :gold medal-data)))
 
 
 ;; React components
@@ -133,10 +133,10 @@
 ;; Main render function
 
 (defn- render [element-id]
-  (let [{:keys [award-data sort-criterion]} @app-state
+  (let [{:keys [medal-data sort-criterion]} @app-state
         container-node (.getElementById js/document element-id)]
     (r/render
-      (r/element AppContainer {:rows (->> award-data
+      (r/element AppContainer {:rows (->> medal-data
                                           (sort-by-criterion sort-criterion)
                                           (take 10))
                                :sort-criterion sort-criterion
@@ -147,7 +147,7 @@
 ;; Handlers for the Ajax call
 
 (defn- handler [response]
-  (update-award-data! (augment-award-data response)))
+  (update-medal-data! (augment-medal-data response)))
 
 (defn- error-handler [{:keys [status status-text] :as error-response}]
   (js/alert (str "Something bad happened: " status " " status-text)))
@@ -161,7 +161,7 @@
    (place-widget! element-id "gold"))
   ([element-id sort-criterion]
    (update-sort-criterion! sort-criterion)
-   (ajax/GET award-data-endpoint
+   (ajax/GET medal-data-endpoint
              {:handler handler
               :error-handler error-handler
               :response-format (ajax/json-response-format {:keywords? true})})
