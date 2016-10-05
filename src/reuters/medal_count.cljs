@@ -8,10 +8,14 @@
 ;; but the annotations are just for guidance, so the
 ;; person reading it will know what is in the API
 
-(enable-console-print!)
+
+;; Config values
 
 (def ^:private flag-height 17)
 (def ^:private award-data-endpoint "https://s3-us-west-2.amazonaws.com/reuters.medals-widget/medals.json")
+
+
+;; Global app-state atom, and updaters for it
 
 (defonce ^:private app-state (atom {:award-data nil ;; will be downloaded
                                     :sort-criterion nil})) ;; will be passed in as an argument
@@ -21,6 +25,12 @@
 
 (def ^:private update-sort-criterion!
   (partial swap! app-state assoc :sort-criterion))
+
+
+;; Functions to augment data from the server
+;; with totals and indexes by alphabetical order
+;; (which will be used to position the flag sprite
+;; in each row.)
 
 (def ^:private add-alpha-indexes
   (partial map-indexed (fn [idx country-awards]
@@ -36,13 +46,16 @@
        (add-alpha-indexes)
        (add-totals)))
 
+
+;; Sorting functions. Each type of sort has a fallback
+;; sort criterion, to break ties.
+
 (defn- sort-by-with-fallback [primary-key fallback-key items]
   (sort (comparator (fn [a b]
                       (if (not= (primary-key a) (primary-key b))
                         (> (primary-key a) (primary-key b))
                         (> (fallback-key a) (fallback-key b)))))
         items))
-
 
 (defn- sort-by-criterion [criterion award-data]
   (case criterion
@@ -51,6 +64,8 @@
     "bronze" (sort-by-with-fallback :bronze :gold award-data)
     "total" (sort-by-with-fallback :total :gold award-data)))
 
+
+;; React components
 
 (def ^:private Row
   (r/component
@@ -74,7 +89,6 @@
       (let [class-name (str medal-class (if selected? " selected" ""))]
         (sab/html
           [:th {:class-name class-name :on-click update!}])))))
-
 
 (def ^:private MainTable
   (r/component
@@ -115,7 +129,8 @@
          [:div.label "MEDAL COUNT"]
          (r/element MainTable props)]))))
 
-;; render
+
+;; Main render function
 
 (defn- render [element-id]
   (let [{:keys [award-data sort-criterion]} @app-state
@@ -129,12 +144,17 @@
       container-node)))
 
 
+;; Handlers for the Ajax call
+
 (defn- handler [response]
   (update-award-data! (augment-award-data response)))
 
-
 (defn- error-handler [{:keys [status status-text] :as error-response}]
   (js/alert (str "Something bad happened: " status " " status-text)))
+
+
+;; Main function for export; takes an element id and an optional
+;; initial sort criterion.
 
 (defn place-widget!
   ([element-id]
@@ -149,10 +169,7 @@
 
 
 ;; TODO:
-;; 1. Change award to medal, in naming
-;; 2. fix the movement of the "TOTAL" text when selected
 ;; 3. fix the sizes of the flags
-;; 4. Write comments
 ;; 5. Write a readme
 ;; 6. Write tests. spec? Some integration tests?
 ;; 7. Compile and deploy to github
