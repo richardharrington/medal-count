@@ -9,8 +9,8 @@ html, html * {
 
 .app-container {
   width: 515px;
+  margin-top: 20px;
   margin-left: 20px;
-  margin-bottom: 40px;
 }
 
 .label {
